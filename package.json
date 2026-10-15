@@ -1,0 +1,14 @@
+{
+  "name": "tile-match",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "engines": { "node": ">=22" },
+  "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
+  "scripts": {
+    "dev": "pnpm --filter @tile-match/web dev",
+    "build": "pnpm --filter @tile-match/web build",
+    "preview": "pnpm --filter @tile-match/web preview",
+    "typecheck": "pnpm --filter @tile-match/web exec tsc -b",
+    "test": "pnpm --filter @tile-match/web test"
+  }
+}
