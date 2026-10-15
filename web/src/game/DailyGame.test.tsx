@@ -102,7 +102,7 @@ describe("DailyGame score posting", () => {
     });
     await act(async () => {});
 
-    expect(screen.getByText(/Tray full/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Game over" })).toBeInTheDocument();
     expect(sdk.submitScore).not.toHaveBeenCalled();
   });
 

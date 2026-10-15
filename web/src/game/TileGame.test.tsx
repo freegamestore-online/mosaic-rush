@@ -75,13 +75,13 @@ describe("TileGame", () => {
       fireEvent.click(tapped(`Tile ${kind}, column ${x + 1}, row 1`));
     });
 
-    expect(screen.getByText("Tray full. Game over.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Game over" })).toBeInTheDocument();
     expect(screen.getByLabelText("Tray, 7 of 7 tiles")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Play again" }));
 
     expect(screen.getByLabelText("Tray, 0 of 7 tiles")).toBeInTheDocument();
-    expect(screen.queryByText("Tray full. Game over.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Game over" })).not.toBeInTheDocument();
   });
 
   it("reports a win once and offers the next level when the board is cleared", () => {

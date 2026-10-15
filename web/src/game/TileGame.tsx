@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GameButton, useGameSounds } from "@freegamestore/games";
 import { TRAY_CAPACITY, canTakeTile, isBoardCleared, type GameState, type Stack } from "./boardState";
 import type { DailyResult } from "./dailyResults";
 import type { HelperUses } from "./helpers";
 import { COLORBLIND_PALETTE, DEFAULT_PALETTE, tileColor, tileText, type Palette } from "./palette";
 import { DEFAULT_PREFS, type Prefs } from "./prefs";
+import { formatTime } from "./scoring";
 import { TileSymbol } from "./tileArt";
 import { useTileGame, type TrayTile } from "./useTileGame";
+import { ResultOverlay, type ResultStat } from "../ui/ResultOverlay";
 
 /** Vertical offset between tiles in one stack, in px. */
 const STACK_OFFSET = 4;
@@ -37,11 +39,25 @@ export function TileFace({ kind, palette, large }: { kind: string; palette: Pale
   );
 }
 
-export interface FinishInfo extends DailyResult {
+/** What a finished game looked like, before any score is applied. */
+export interface FinishStats extends DailyResult {
   /** Whole seconds from the first tap to the finish. */
   seconds: number;
   /** Helper uses left unspent. */
   unusedHelpers: number;
+  /** Tiles taken off the board, including the ones cleared in trios. */
+  tilesCleared: number;
+}
+
+export interface FinishInfo extends FinishStats {
+  /** From `scoreOf`, when the game was given one. */
+  score?: number;
+}
+
+/** The summary shown on the result overlay. Captured once, when the game finishes. */
+interface Finish extends FinishInfo {
+  best?: number;
+  newBest: boolean;
 }
 
 interface TileGameProps {
@@ -54,16 +70,31 @@ interface TileGameProps {
   /** Called once when the board is won or lost. */
   onFinish?: (finish: FinishInfo) => void;
   onNext?: () => void;
+  /** Score for a finished game. Omit it when the mode has no score of its own. */
+  scoreOf?: (stats: FinishStats) => number;
+  /** The best score on this board so far, from before this game. */
+  best?: number;
 }
 
-export function TileGame({ label, board, prefs = DEFAULT_PREFS, onWin, onFinish, onNext }: TileGameProps) {
+export function TileGame({
+  label,
+  board,
+  prefs = DEFAULT_PREFS,
+  onWin,
+  onFinish,
+  onNext,
+  scoreOf,
+  best,
+}: TileGameProps) {
   const { game, moves, startedAt, tray, busy, tap, restart, helpers, undo, shuffle, returnThree } =
     useTileGame(board);
   const sounds = useGameSounds();
+  const [finish, setFinish] = useState<Finish | null>(null);
   const lost = game.status === "lost";
   const won = isBoardCleared(game);
   const outcome = won ? "won" : lost ? "lost" : null;
   const palette = prefs.colorBlind ? COLORBLIND_PALETTE : DEFAULT_PALETTE;
+  const totalTiles = useMemo(() => board.flat().reduce((n, stack) => n + stack.length, 0), [board]);
 
   // Sounds follow state changes. Muting is handled by the SDK, so none of these check it.
   useEffect(() => {
@@ -84,15 +115,33 @@ export function TileGame({ label, board, prefs = DEFAULT_PREFS, onWin, onFinish,
   }, [outcome]);
 
   useEffect(() => {
-    if (!outcome) return;
+    if (!outcome) {
+      setFinish(null);
+      return;
+    }
     const seconds = startedAt === null ? 0 : Math.floor((Date.now() - startedAt) / 1000);
     const unusedHelpers = helpers.undo.remaining + helpers.shuffle.remaining + helpers.returnThree.remaining;
-    onFinish?.({ outcome, moves, seconds, unusedHelpers });
+    const remaining = game.cells.flat().reduce((n, stack) => n + stack.length, 0) + game.tray.length;
+    const stats: FinishStats = {
+      outcome,
+      moves,
+      seconds,
+      unusedHelpers,
+      tilesCleared: totalTiles - remaining,
+    };
+    const score = scoreOf?.(stats);
+    onFinish?.({ ...stats, score });
+    setFinish({
+      ...stats,
+      score,
+      best,
+      newBest: score !== undefined && best !== undefined && score > best,
+    });
   }, [outcome]);
 
   return (
     <div
-      className="flex flex-col items-center gap-3"
+      className="relative flex flex-col items-center gap-3"
       style={{ width: prefs.largeTiles ? BOARD_WIDTH_LARGE : BOARD_WIDTH }}
     >
       <Board game={game} disabled={busy || lost || won} onTap={tap} palette={palette} large={prefs.largeTiles} />
@@ -103,14 +152,9 @@ export function TileGame({ label, board, prefs = DEFAULT_PREFS, onWin, onFinish,
         onUse={{ undo, shuffle, returnThree }}
       />
       <p className="min-h-6 text-center" style={{ color: "var(--muted)" }} aria-live="polite">
-        {won
-          ? `${label} cleared!`
-          : lost
-            ? "Tray full. Game over."
-            : `${label}. Tap a top tile.`}
+        {finish ? "" : `${label}. Tap a top tile.`}
       </p>
-      {lost && <ActionButton label="Play again" onClick={restart} />}
-      {won && onNext && <ActionButton label="Next level" onClick={onNext} />}
+      {finish && <Result finish={finish} label={label} onRestart={restart} onNext={onNext} />}
     </div>
   );
 }
@@ -146,11 +190,43 @@ function HelperBar({
   );
 }
 
-function ActionButton({ label, onClick }: { label: string; onClick: () => void }) {
+/** The win or loss overlay, with the stats and the one action that moves the player on. */
+function Result({
+  finish,
+  label,
+  onRestart,
+  onNext,
+}: {
+  finish: Finish;
+  label: string;
+  onRestart: () => void;
+  onNext?: () => void;
+}) {
+  const won = finish.outcome === "won";
+  const stats: ResultStat[] = [
+    ...(finish.score === undefined ? [] : [{ label: "Score", value: finish.score.toLocaleString() }]),
+    { label: "Tiles cleared", value: String(finish.tilesCleared) },
+    { label: "Moves", value: String(finish.moves) },
+    { label: "Time", value: formatTime(finish.seconds) },
+    ...(won ? [{ label: "Helpers left", value: String(finish.unusedHelpers) }] : []),
+  ];
+  const badge = finish.newBest
+    ? "New best!"
+    : finish.best !== undefined && finish.best > 0
+      ? `Best: ${finish.best.toLocaleString()}`
+      : undefined;
+  const action = won ? (onNext && { label: "Next level", onClick: onNext }) : { label: "Play again", onClick: onRestart };
+
   return (
-    <GameButton variant="primary" onClick={onClick}>
-      {label}
-    </GameButton>
+    <ResultOverlay
+      tone={won ? "win" : "lose"}
+      eyebrow={label}
+      title={won ? `${label} cleared!` : "Game over"}
+      message={won ? undefined : "Your tray filled up."}
+      stats={stats}
+      badge={badge}
+      action={action}
+    />
   );
 }
 

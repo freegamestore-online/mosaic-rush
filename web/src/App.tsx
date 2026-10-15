@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { GameShell, GameTopbar, GameAuth, GameButton, GameTextSizeToggle, GameThemeToggle } from "@freegamestore/games";
-import { TileGame } from "./game/TileGame";
+import { TileGame, type FinishStats } from "./game/TileGame";
 import { levelBoard } from "./game/difficulty";
 import { DailyGame } from "./game/DailyGame";
+import { levelScore } from "./game/scoring";
+import { useBests } from "./game/useBests";
 import { useProgress } from "./game/useProgress";
 import { usePrefs } from "./game/usePrefs";
 import type { Prefs } from "./game/prefs";
@@ -135,8 +137,18 @@ function PressButton({
   );
 }
 
+/** A level's score, from how the game ended. Daily puzzles keep their own score. */
+const scoreLevel = (stats: FinishStats) =>
+  levelScore({
+    tilesCleared: stats.tilesCleared,
+    won: stats.outcome === "won",
+    seconds: stats.seconds,
+    unusedHelpers: stats.unusedHelpers,
+  });
+
 function LevelsGame({ prefs }: { prefs: Prefs }) {
   const { progress, complete } = useProgress();
+  const { bests, record } = useBests();
   const [levelNumber, setLevelNumber] = useState(progress.unlocked);
   const board = useMemo(() => levelBoard(levelNumber), [levelNumber]);
 
@@ -146,6 +158,11 @@ function LevelsGame({ prefs }: { prefs: Prefs }) {
       label={`Level ${levelNumber}`}
       board={board}
       prefs={prefs}
+      scoreOf={scoreLevel}
+      best={bests[String(levelNumber)] ?? 0}
+      onFinish={(finish) => {
+        if (finish.score !== undefined) record(levelNumber, finish.score);
+      }}
       onWin={() => complete(levelNumber)}
       onNext={() => setLevelNumber((n) => n + 1)}
     />

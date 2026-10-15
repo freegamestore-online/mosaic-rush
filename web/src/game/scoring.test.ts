@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { dailyScore } from "./scoring";
+import { dailyScore, formatTime, levelScore } from "./scoring";
+
+describe("levelScore", () => {
+  it("is 100 per tile taken off the board when the level is lost", () => {
+    expect(levelScore({ tilesCleared: 12, won: false, seconds: 30, unusedHelpers: 5 })).toBe(1200);
+  });
+
+  it("adds the daily-win bonus when the level is cleared", () => {
+    const bonus = dailyScore({ seconds: 100, unusedHelpers: 2 });
+    expect(levelScore({ tilesCleared: 9, won: true, seconds: 100, unusedHelpers: 2 })).toBe(900 + bonus);
+  });
+
+  it("never goes negative for odd inputs", () => {
+    expect(levelScore({ tilesCleared: -3, won: false, seconds: 0, unusedHelpers: 0 })).toBe(0);
+  });
+});
+
+describe("formatTime", () => {
+  it("shows minutes and zero-padded seconds", () => {
+    expect(formatTime(0)).toBe("0:00");
+    expect(formatTime(7)).toBe("0:07");
+    expect(formatTime(75.9)).toBe("1:15");
+    expect(formatTime(600)).toBe("10:00");
+  });
+});
 
 describe("dailyScore", () => {
   it("is 1000 plus the time bonus plus 100 per unused helper", () => {
