@@ -5,11 +5,12 @@ import type { DailyResult } from "./dailyResults";
 import type { HelperUses } from "./helpers";
 import { COLORBLIND_PALETTE, DEFAULT_PALETTE, tileColor, tileText, type Palette } from "./palette";
 import { DEFAULT_PREFS, type Prefs } from "./prefs";
-import { formatTime } from "./scoring";
+import { clearPoints, formatTime } from "./scoring";
 import { TileSymbol } from "./tileArt";
 import { useTileGame, type TrayTile } from "./useTileGame";
 import { ResultOverlay, type ResultStat } from "../ui/ResultOverlay";
 import { ParticleLayer, type ParticleLayerHandle } from "../feel/ParticleLayer";
+import { ScorePop } from "../feel/ScorePop";
 import { flyTo, type Box } from "../motion/flight";
 import { HAPTICS } from "../feel/haptics";
 import { useHaptics } from "../feel/useHaptics";
@@ -137,6 +138,9 @@ export function TileGame({
   const particlesRef = useRef<ParticleLayerHandle>(null);
   /** Where the tile just tapped sat, so its flight into the tray can start there. */
   const flightFrom = useRef<Box | null>(null);
+  /** Floating `+N` pop-ups for clears that are still on screen. */
+  const [pops, setPops] = useState<{ id: number; points: number; x: number; y: number }[]>([]);
+  const nextPopId = useRef(0);
   const cancelFlight = useRef<(() => void) | null>(null);
   const lost = game.status === "lost";
   const won = isBoardCleared(game);
@@ -177,9 +181,16 @@ export function TileGame({
     // Each tile of the trio that is clearing sprays in its own colour.
     const root = rootRef.current;
     if (root) {
-      burstFrom(root, particlesRef.current, root.querySelectorAll<HTMLElement>(".tile-clear"), CLEAR_BURST, (el) => [
-        tileColor(palette, el.dataset.kind ?? ""),
-      ]);
+      const cleared = root.querySelectorAll<HTMLElement>(".tile-clear");
+      burstFrom(root, particlesRef.current, cleared, CLEAR_BURST, (el) => [tileColor(palette, el.dataset.kind ?? "")]);
+      if (cleared.length > 0) {
+        // One pop-up for the whole clear, centred on the tiles that are leaving.
+        const centres = Array.from(cleared, (el) => boxWithin(el, root));
+        const x = centres.reduce((sum, box) => sum + box.left + box.width / 2, 0) / centres.length;
+        const y = centres.reduce((sum, box) => sum + box.top + box.height / 2, 0) / centres.length;
+        const id = nextPopId.current++;
+        setPops((current) => [...current, { id, points: clearPoints(cleared.length), x, y }]);
+      }
     }
   }, [busy]);
 
@@ -246,6 +257,15 @@ export function TileGame({
       </p>
       {finish && <Result finish={finish} label={label} onRestart={restart} onNext={onNext} />}
       <ParticleLayer ref={particlesRef} />
+      {pops.map((pop) => (
+        <ScorePop
+          key={pop.id}
+          points={pop.points}
+          x={pop.x}
+          y={pop.y}
+          onDone={() => setPops((current) => current.filter((p) => p.id !== pop.id))}
+        />
+      ))}
     </div>
   );
 }
@@ -270,9 +290,15 @@ function HelperBar({
       {(Object.keys(HELPER_LABELS) as (keyof HelperUses)[]).map((key) => {
         const { available, remaining } = helpers[key];
         return (
-          <div key={key} className="flex-1">
+          <div key={key} className="helper-slot">
             <GameButton variant="secondary" size="sm" block disabled={busy || !available} onClick={onUse[key]}>
-              {`${HELPER_LABELS[key]} (${remaining})`}
+              <span>{HELPER_LABELS[key]}</span>{" "}
+              {/* Keyed on the count, so the badge bumps each time a use is spent. */}
+              <span key={remaining} className="helper-badge">
+                {remaining}
+                {" "}
+                <span className="sr-only">left</span>
+              </span>
             </GameButton>
           </div>
         );

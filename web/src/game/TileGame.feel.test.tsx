@@ -125,3 +125,25 @@ describe("TileGame tile flight", () => {
     expect(document.querySelector<HTMLElement>('[data-slot="0"] > [data-kind]')?.style.transform).toBe("");
   });
 });
+
+describe("TileGame score pop-ups", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setReducedMotion(false);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    Reflect.deleteProperty(window, "matchMedia");
+  });
+
+  it("shows +300 for a trio and removes it once it has floated away", () => {
+    clearThreeReds();
+    expect(screen.getByText("+300")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.queryByText("+300")).toBeNull();
+  });
+});

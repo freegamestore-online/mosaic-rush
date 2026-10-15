@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { dailyScore, formatTime, levelScore } from "./scoring";
+import { clearPoints, dailyScore, formatTime, levelScore } from "./scoring";
+
+describe("clearPoints", () => {
+  it("is 100 per tile, so a trio of three pops +300", () => {
+    expect(clearPoints(3)).toBe(300);
+    expect(clearPoints(1)).toBe(100);
+  });
+
+  it("is zero for nothing cleared, and never negative", () => {
+    expect(clearPoints(0)).toBe(0);
+    expect(clearPoints(-2)).toBe(0);
+  });
+});
 
 describe("levelScore", () => {
   it("is 100 per tile taken off the board when the level is lost", () => {

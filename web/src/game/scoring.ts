@@ -28,6 +28,11 @@ export function levelScore({
   return won ? base + dailyScore({ seconds, unusedHelpers }) : base;
 }
 
+/** Points for one clear event: 100 per tile in the trio, so a match of three is +300. */
+export function clearPoints(tilesCleared: number): number {
+  return Math.max(0, Math.floor(tilesCleared)) * 100;
+}
+
 /** Elapsed time as `m:ss`, rounded down to whole seconds. */
 export function formatTime(seconds: number): string {
   const whole = Math.max(0, Math.floor(seconds));

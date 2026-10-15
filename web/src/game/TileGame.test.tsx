@@ -135,17 +135,17 @@ describe("TileGame", () => {
   it("shows helper buttons that start disabled and undo a tap", () => {
     render(<TileGame label="Level 1" board={[[["R", "O"]]]} />);
 
-    const undo = screen.getByRole("button", { name: "Undo (3)" });
+    const undo = screen.getByRole("button", { name: "Undo 3 left" });
     expect(undo).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Shuffle (2)" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Return 3 (2)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Shuffle 2 left" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Return 3 2 left" })).toBeDisabled();
 
     fireEvent.click(tapped("Tile O, column 1, row 1"));
     expect(screen.getByLabelText("Tray, 1 of 7 tiles")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Undo (3)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Undo 3 left" }));
     expect(screen.getByLabelText("Tray, 0 of 7 tiles")).toBeInTheDocument();
     expect(tapped("Tile O, column 1, row 1")).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Undo (2)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Undo 2 left" })).toBeDisabled();
   });
 });
