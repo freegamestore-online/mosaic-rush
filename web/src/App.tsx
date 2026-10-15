@@ -4,6 +4,7 @@ import { TileGame } from "./game/TileGame";
 import { levelBoard } from "./game/difficulty";
 import { dailyBoard, dailyKey } from "./game/daily";
 import { useDailyResults } from "./game/useDailyResults";
+import { DailyScores } from "./game/DailyScores";
 import { useProgress } from "./game/useProgress";
 
 type Mode = "levels" | "daily";
@@ -87,6 +88,7 @@ function DailyGame() {
         board={board}
         onFinish={(finished) => record(key, finished)}
       />
+      <DailyScores />
     </>
   );
 }
