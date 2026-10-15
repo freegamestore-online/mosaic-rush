@@ -1,4 +1,4 @@
-# tile-match
+# Mosaic Rush (tile-match)
 
 A free game on FreeGameStore.
 

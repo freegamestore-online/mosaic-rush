@@ -41,9 +41,9 @@ export default defineConfig({
       // field passes through to the emitted manifest.webmanifest; browsers
       // ignore unknown members.
       manifest: {
-        name: "tile-match",
-        short_name: "tile-match",
-        description: "tile-match — free forever",
+        name: "Mosaic Rush",
+        short_name: "Mosaic Rush",
+        description: "Mosaic Rush — free forever",
         start_url: "/",
         display: "standalone",
         background_color: "#0f0f0f",
