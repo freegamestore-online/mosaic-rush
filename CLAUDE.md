@@ -1,8 +1,8 @@
-# Mosaic Rush
+# Mosaic Rush (mosaic-rush)
 
 A free game on FreeGameStore.
 
-- Subdomain: `Mosaic Rush.freegamestore.online`
+- Subdomain: `mosaic-rush.freegamestore.online`
 - Dev: `pnpm install && pnpm dev`
 - Build: `pnpm build`
 - Deploy: `git push origin main` (auto-deploys to R2 via GitHub Actions)
@@ -10,3 +10,5 @@ A free game on FreeGameStore.
 Free, MIT-licensed, no tracking. For platform conventions, read
 https://freegamestore.online/skills.md
 before writing or changing anything.
+
+Per-repo conventions: https://raw.githubusercontent.com/freegamestore-online/platform/main/sites/freegamestore/SKILLS.md
