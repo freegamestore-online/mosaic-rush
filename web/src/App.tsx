@@ -125,12 +125,7 @@ function PressButton({
       type="button"
       aria-pressed={pressed}
       onClick={onClick}
-      className="whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-semibold"
-      style={
-        pressed
-          ? { background: "var(--accent)", color: "#ffffff" }
-          : { border: "2px solid var(--line-strong)" }
-      }
+      className="press-toggle whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-semibold"
     >
       {children}
     </button>

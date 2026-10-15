@@ -2,6 +2,19 @@
 
 /* Fonts loaded via <link> in index.html (Manrope + Fraunces from Google Fonts) */
 
+/*
+ * Brand tokens. Every colour in the game comes from these, so a theme change
+ * happens here and nowhere else. The dark set below overrides the neutrals and
+ * status colours. The accent and its soft tint are shared by both themes.
+ *   --paper        page and board background
+ *   --ink          primary text
+ *   --muted        secondary text and captions
+ *   --line         hairline borders on empty surfaces
+ *   --line-strong  borders on buttons and toggles
+ *   --panel        raised cards and overlays
+ *   --accent       primary actions and highlights
+ *   --accent-soft  quiet fills behind accent text (badges, dark-mode tints)
+ */
 :root {
   /* Neutrals */
   --paper: #ffffff;
@@ -24,6 +37,17 @@
 
   /* Layout */
   --radius: 1.25rem;
+
+  /*
+   * Motion tokens. Every animation duration and easing in the game reads these.
+   * The reduced-motion block below sets the durations to zero, so the
+   * animations finish at once and only the final state is shown.
+   */
+  --motion-fast: 120ms;
+  --motion-base: 240ms;
+  --motion-slow: 420ms;
+  --motion-ease-out: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --motion-ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.3);
 
   /* Backward-compat aliases (store site naming) */
   --bg: #ffffff;
@@ -107,8 +131,8 @@ body {
     inset 0 -3px 0 rgb(0 0 0 / 0.2),
     0 3px 6px rgb(0 0 0 / 0.25);
   transition:
-    transform 80ms ease-out,
-    box-shadow 80ms ease-out;
+    transform var(--motion-fast) var(--motion-ease-out),
+    box-shadow var(--motion-fast) var(--motion-ease-out);
 }
 
 button:enabled:active .tile-face {
@@ -149,12 +173,12 @@ button:enabled:active .tile-face {
 }
 
 .tile-clear {
-  animation: tile-clear 300ms ease-in forwards;
+  animation: tile-clear var(--motion-base) ease-in forwards;
 }
 
 /* A tile pops when it is uncovered. No fill mode, so the press transform is not held. */
 .tile-reveal {
-  animation: tile-reveal 220ms cubic-bezier(0.2, 0.9, 0.3, 1.3);
+  animation: tile-reveal var(--motion-fast) var(--motion-ease-spring);
 }
 
 @keyframes tile-reveal {
@@ -164,6 +188,17 @@ button:enabled:active .tile-face {
   to {
     transform: scale(1);
   }
+}
+
+/* Mode and display toggles. aria-pressed carries the state, so the styles key off it. */
+.press-toggle {
+  border: 2px solid var(--line-strong);
+}
+
+.press-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
 }
 
 /* Helper slots share the row equally and may shrink. Long names wrap inside the button
@@ -193,7 +228,7 @@ button:enabled:active .tile-face {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
   background: var(--accent-soft);
-  animation: helper-badge-bump 260ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  animation: helper-badge-bump var(--motion-fast) var(--motion-ease-spring);
 }
 
 @keyframes helper-badge-bump {
@@ -220,6 +255,12 @@ button:enabled:active .tile-face {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+  }
+
   .helper-badge {
     animation: none;
   }
