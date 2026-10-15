@@ -1,14 +1,14 @@
 {
-  "name": "APPNAME",
+  "name": "mosaic-rush",
   "private": true,
   "packageManager": "pnpm@10.30.3",
   "engines": { "node": ">=22" },
   "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
   "scripts": {
-    "dev": "pnpm --filter @APPNAME/web dev",
-    "build": "pnpm --filter @APPNAME/web build",
-    "preview": "pnpm --filter @APPNAME/web preview",
-    "typecheck": "pnpm --filter @APPNAME/web exec tsc -b",
-    "test": "pnpm --filter @APPNAME/web test"
+    "dev": "pnpm --filter @mosaic-rush/web dev",
+    "build": "pnpm --filter @mosaic-rush/web build",
+    "preview": "pnpm --filter @mosaic-rush/web preview",
+    "typecheck": "pnpm --filter @mosaic-rush/web exec tsc -b",
+    "test": "pnpm --filter @mosaic-rush/web test"
   }
 }
