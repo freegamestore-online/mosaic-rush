@@ -166,29 +166,12 @@ button:enabled:active .tile-face {
   }
 }
 
-/* The tray shakes once when the tray fills and the game is lost */
-.tray-shake {
-  animation: tray-shake 380ms ease-in-out;
-}
-
-@keyframes tray-shake {
-  20%,
-  60% {
-    transform: translateX(-6px);
-  }
-  40%,
-  80% {
-    transform: translateX(6px);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .tile-clear {
     animation-duration: 1ms;
   }
 
-  .tile-reveal,
-  .tray-shake {
+  .tile-reveal {
     animation: none;
   }
 }

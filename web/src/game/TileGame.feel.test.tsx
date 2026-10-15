@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CLEAR_DELAY_MS } from "./useTileGame";
 import { TileGame } from "./TileGame";
@@ -50,16 +50,40 @@ describe("TileGame feel", () => {
     expect(liveParticles()).toBe(0);
   });
 
-  it("shakes the tray once the game is lost", () => {
-    const kinds = ["R", "O", "Y", "G", "T", "B", "V", "P"];
-    render(<TileGame label="Level 1" board={[kinds.map((kind) => [kind])]} />);
-    const tray = () => screen.getByLabelText("Tray, 7 of 7 tiles");
+  it("shakes the whole game once, when the tray fills", () => {
+    const animate = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "animate", { value: animate, configurable: true });
+    try {
+      const kinds = ["R", "O", "Y", "G", "T", "B", "V", "P"];
+      render(<TileGame label="Level 1" board={[kinds.map((kind) => [kind])]} />);
 
-    kinds.slice(0, 6).forEach((kind, x) => fireEvent.click(tapped(`Tile ${kind}, column ${x + 1}, row 1`)));
-    expect(screen.getByLabelText("Tray, 6 of 7 tiles").className).not.toContain("tray-shake");
+      kinds.slice(0, 6).forEach((kind, x) => fireEvent.click(tapped(`Tile ${kind}, column ${x + 1}, row 1`)));
+      expect(animate).not.toHaveBeenCalled();
 
-    fireEvent.click(tapped("Tile V, column 7, row 1"));
-    expect(tray().className).toContain("tray-shake");
+      fireEvent.click(tapped("Tile V, column 7, row 1"));
+      expect(animate).toHaveBeenCalledTimes(1);
+      expect(animate.mock.contexts[0]).toHaveClass("relative");
+    } finally {
+      Reflect.deleteProperty(HTMLElement.prototype, "animate");
+    }
+  });
+
+  it("pulses the device on a match clear and on game over", () => {
+    const vibrate = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, "vibrate", { value: vibrate, configurable: true });
+    try {
+      clearThreeReds();
+      expect(vibrate).toHaveBeenLastCalledWith([12, 40, 18]);
+
+      vibrate.mockClear();
+      cleanup();
+      const kinds = ["R", "O", "Y", "G", "T", "B", "V", "P"];
+      render(<TileGame label="Level 1" board={[kinds.map((kind) => [kind])]} />);
+      kinds.slice(0, 7).forEach((kind, x) => fireEvent.click(tapped(`Tile ${kind}, column ${x + 1}, row 1`)));
+      expect(vibrate).toHaveBeenLastCalledWith([60, 80, 120]);
+    } finally {
+      Reflect.deleteProperty(navigator, "vibrate");
+    }
   });
 });
 

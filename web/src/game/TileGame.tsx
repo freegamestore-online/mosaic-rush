@@ -11,6 +11,9 @@ import { useTileGame, type TrayTile } from "./useTileGame";
 import { ResultOverlay, type ResultStat } from "../ui/ResultOverlay";
 import { ParticleLayer, type ParticleLayerHandle } from "../feel/ParticleLayer";
 import { flyTo, type Box } from "../motion/flight";
+import { HAPTICS } from "../feel/haptics";
+import { useHaptics } from "../feel/useHaptics";
+import { useShake } from "../feel/useShake";
 import { prefersReducedMotion } from "../motion/reducedMotion";
 import type { BurstOptions } from "../feel/particles";
 
@@ -129,6 +132,8 @@ export function TileGame({
   const sounds = useGameSounds();
   const [finish, setFinish] = useState<Finish | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const shakeScreen = useShake(rootRef);
+  const haptics = useHaptics();
   const particlesRef = useRef<ParticleLayerHandle>(null);
   /** Where the tile just tapped sat, so its flight into the tray can start there. */
   const flightFrom = useRef<Box | null>(null);
@@ -168,6 +173,7 @@ export function TileGame({
   useEffect(() => {
     if (!busy) return;
     sounds.playClear();
+    haptics.pulse(HAPTICS.clear);
     // Each tile of the trio that is clearing sprays in its own colour.
     const root = rootRef.current;
     if (root) {
@@ -189,7 +195,12 @@ export function TileGame({
 
   useEffect(() => {
     if (won) sounds.playLevelUp();
-    if (lost) sounds.playGameOver();
+    if (lost) {
+      sounds.playGameOver();
+      // The tray is full: the whole game jolts once, and the device pulses.
+      shakeScreen();
+      haptics.pulse(HAPTICS.gameOver);
+    }
   }, [outcome]);
 
   useEffect(() => {
@@ -224,7 +235,7 @@ export function TileGame({
       style={{ width: prefs.largeTiles ? BOARD_WIDTH_LARGE : BOARD_WIDTH }}
     >
       <Board game={game} disabled={busy || lost || won} onTap={tapTile} palette={palette} large={prefs.largeTiles} />
-      <Tray tiles={tray} palette={palette} large={prefs.largeTiles} shake={lost} />
+      <Tray tiles={tray} palette={palette} large={prefs.largeTiles} />
       <HelperBar
         helpers={helpers}
         busy={busy || won}
@@ -377,21 +388,10 @@ function Board({
   );
 }
 
-function Tray({
-  tiles,
-  palette,
-  large,
-  shake,
-}: {
-  tiles: TrayTile[];
-  palette: Palette;
-  large: boolean;
-  /** Shakes the tray once, when the game is lost. */
-  shake: boolean;
-}) {
+function Tray({ tiles, palette, large }: { tiles: TrayTile[]; palette: Palette; large: boolean }) {
   return (
     <div
-      className={`grid w-full gap-1 ${shake ? "tray-shake" : ""}`}
+      className="grid w-full gap-1"
       style={{ gridTemplateColumns: `repeat(${TRAY_CAPACITY}, minmax(0, 1fr))` }}
       aria-label={`Tray, ${tiles.length} of ${TRAY_CAPACITY} tiles`}
     >
