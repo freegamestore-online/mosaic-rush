@@ -18,11 +18,15 @@ const STACK_OFFSET = 4;
 const BOARD_WIDTH = "min(24rem, 92vw, calc(100svh - 22rem))";
 const BOARD_WIDTH_LARGE = "min(30rem, 92vw, calc(100svh - 22rem))";
 
-function TileFace({ kind, palette, large }: { kind: string; palette: Palette; large: boolean }) {
+/**
+ * A tile's face. The fill is set inline from the palette, so it always wins over
+ * any stylesheet. `.tile-face` adds the raised bevel and the pressed state.
+ */
+export function TileFace({ kind, palette, large }: { kind: string; palette: Palette; large: boolean }) {
   const fill = tileColor(palette, kind);
   return (
     <span
-      className={`flex h-full w-full items-center justify-center rounded-xl font-bold shadow-md ${
+      className={`tile-face flex h-full w-full items-center justify-center rounded-xl font-bold ${
         large ? "text-2xl" : "text-lg"
       }`}
       style={{ background: fill, color: tileText(fill) }}
