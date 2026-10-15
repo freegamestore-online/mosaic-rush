@@ -80,3 +80,37 @@ body {
   height: 100%;
   overflow: hidden;
 }
+
+/* Tile motion: a tapped tile pops into the tray; a matched trio shrinks away */
+@keyframes tile-enter {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes tile-clear {
+  to {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+
+.tile-enter {
+  animation: tile-enter 180ms ease-out;
+}
+
+.tile-clear {
+  animation: tile-clear 300ms ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-enter,
+  .tile-clear {
+    animation-duration: 1ms;
+  }
+}
