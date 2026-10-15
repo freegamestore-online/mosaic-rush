@@ -79,7 +79,7 @@ describe("DailyGame score posting", () => {
     await act(async () => {});
 
     expect(sdk.submitScore).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Sign in with Google to post scores" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in to post scores" })).toBeInTheDocument();
     expect(localStorage.getItem(DAILY_POSTED_KEY)).toBeNull();
   });
 
@@ -115,7 +115,7 @@ describe("DailyGame score posting", () => {
 
     expect(sdk.submitScore).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem(DAILY_POSTED_KEY)).toBeNull();
-    expect(screen.getByText("Daily 2026-10-15 cleared!")).toBeInTheDocument();
+    expect(screen.getByText("Daily puzzle cleared!")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -127,6 +127,6 @@ describe("DailyGame score posting", () => {
     await act(async () => {});
 
     expect(sdk.submitScore).toHaveBeenCalledTimes(1);
-    expect(screen.getByText("Daily 2026-10-15 cleared!")).toBeInTheDocument();
+    expect(screen.getByText("Daily puzzle cleared!")).toBeInTheDocument();
   });
 });

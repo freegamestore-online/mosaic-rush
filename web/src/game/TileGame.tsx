@@ -1,29 +1,30 @@
 import { useEffect } from "react";
+import { useGameSounds } from "@freegamestore/games";
 import { TRAY_CAPACITY, canTakeTile, isBoardCleared, type GameState, type Stack } from "./boardState";
 import type { DailyResult } from "./dailyResults";
 import type { HelperUses } from "./helpers";
+import { COLORBLIND_PALETTE, DEFAULT_PALETTE, tileColor, tileText, type Palette } from "./palette";
+import { DEFAULT_PREFS, type Prefs } from "./prefs";
 import { useTileGame, type TrayTile } from "./useTileGame";
 
-const TILE_COLORS: Record<string, string> = {
-  R: "#ef4444",
-  O: "#f97316",
-  Y: "#eab308",
-  G: "#22c55e",
-  T: "#14b8a6",
-  B: "#3b82f6",
-  V: "#8b5cf6",
-  P: "#ec4899",
-  N: "#92400e",
-};
-
 /** Vertical offset between tiles in one stack, in px. */
-const STACK_OFFSET = 5;
+const STACK_OFFSET = 4;
 
-function TileFace({ kind }: { kind: string }) {
+/**
+ * Board width: as wide as the layout allows, and no taller than the viewport
+ * leaves room for the rest of the screen, so the game never scrolls.
+ */
+const BOARD_WIDTH = "min(24rem, 92vw, calc(100svh - 22rem))";
+const BOARD_WIDTH_LARGE = "min(30rem, 92vw, calc(100svh - 22rem))";
+
+function TileFace({ kind, palette, large }: { kind: string; palette: Palette; large: boolean }) {
+  const fill = tileColor(palette, kind);
   return (
     <span
-      className="flex h-full w-full items-center justify-center rounded-xl text-lg font-bold text-white shadow-md"
-      style={{ background: TILE_COLORS[kind] ?? "#6b7280" }}
+      className={`flex h-full w-full items-center justify-center rounded-xl font-bold shadow-md ${
+        large ? "text-2xl" : "text-lg"
+      }`}
+      style={{ background: fill, color: tileText(fill) }}
     >
       {kind}
     </span>
@@ -41,6 +42,7 @@ interface TileGameProps {
   /** Names the board in the status line, e.g. "Level 3" or "Daily 2026-10-15". */
   label: string;
   board: Stack[][];
+  prefs?: Prefs;
   /** Called once when the board is fully cleared. */
   onWin?: () => void;
   /** Called once when the board is won or lost. */
@@ -48,16 +50,32 @@ interface TileGameProps {
   onNext?: () => void;
 }
 
-export function TileGame({ label, board, onWin, onFinish, onNext }: TileGameProps) {
+export function TileGame({ label, board, prefs = DEFAULT_PREFS, onWin, onFinish, onNext }: TileGameProps) {
   const { game, moves, startedAt, tray, busy, tap, restart, helpers, undo, shuffle, returnThree } =
     useTileGame(board);
+  const sounds = useGameSounds();
   const lost = game.status === "lost";
   const won = isBoardCleared(game);
   const outcome = won ? "won" : lost ? "lost" : null;
+  const palette = prefs.colorBlind ? COLORBLIND_PALETTE : DEFAULT_PALETTE;
+
+  // Sounds follow state changes. Muting is handled by the SDK, so none of these check it.
+  useEffect(() => {
+    if (moves > 0) sounds.playMove();
+  }, [moves]);
+
+  useEffect(() => {
+    if (busy) sounds.playClear();
+  }, [busy]);
 
   useEffect(() => {
     if (won) onWin?.();
   }, [won]);
+
+  useEffect(() => {
+    if (won) sounds.playLevelUp();
+    if (lost) sounds.playGameOver();
+  }, [outcome]);
 
   useEffect(() => {
     if (!outcome) return;
@@ -67,9 +85,12 @@ export function TileGame({ label, board, onWin, onFinish, onNext }: TileGameProp
   }, [outcome]);
 
   return (
-    <div className="flex w-full max-w-sm flex-col items-center gap-6">
-      <Board game={game} disabled={busy || lost || won} onTap={tap} />
-      <Tray tiles={tray} />
+    <div
+      className="flex flex-col items-center gap-3"
+      style={{ width: prefs.largeTiles ? BOARD_WIDTH_LARGE : BOARD_WIDTH }}
+    >
+      <Board game={game} disabled={busy || lost || won} onTap={tap} palette={palette} large={prefs.largeTiles} />
+      <Tray tiles={tray} palette={palette} large={prefs.largeTiles} />
       <HelperBar
         helpers={helpers}
         busy={busy || won}
@@ -80,7 +101,7 @@ export function TileGame({ label, board, onWin, onFinish, onNext }: TileGameProp
           ? `${label} cleared!`
           : lost
             ? "Tray full. Game over."
-            : `${label}. Tap a top tile to move it to the tray.`}
+            : `${label}. Tap a top tile.`}
       </p>
       {lost && <ActionButton label="Play again" onClick={restart} />}
       {won && onNext && <ActionButton label="Next level" onClick={onNext} />}
@@ -113,7 +134,7 @@ function HelperBar({
             type="button"
             disabled={busy || !available}
             onClick={onUse[key]}
-            className="flex-1 rounded-xl border-2 px-2 py-2 text-sm font-semibold disabled:opacity-40"
+            className="flex-1 whitespace-nowrap rounded-xl border-2 px-1 py-2 text-xs font-semibold disabled:opacity-40"
             style={{ borderColor: "var(--line-strong)" }}
           >
             {`${HELPER_LABELS[key]} (${remaining})`}
@@ -141,15 +162,24 @@ function Board({
   game,
   disabled,
   onTap,
+  palette,
+  large,
 }: {
   game: GameState;
   disabled: boolean;
   onTap: (x: number, y: number) => void;
+  palette: Palette;
+  large: boolean;
 }) {
   const cols = game.cells[0]?.length ?? 0;
+  // Stacks rise above their cell. Leave room for the tallest one so nothing spills over the board.
+  const deepest = Math.max(1, ...game.cells.flat().map((stack) => stack.length));
+  const headroom = (deepest - 1) * STACK_OFFSET;
 
   return (
     <div
+      role="group"
+      aria-label="Board"
       className="grid w-full gap-2"
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
@@ -158,11 +188,18 @@ function Board({
           <div key={`${x},${y}`} className="relative aspect-square">
             {stack.map((kind, i) => {
               const isTop = i === stack.length - 1;
-              const offset = { transform: `translateY(-${i * STACK_OFFSET}px)`, zIndex: i };
+              const offset = {
+                top: headroom,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                transform: `translateY(-${i * STACK_OFFSET}px)`,
+                zIndex: i,
+              };
               if (!isTop) {
                 return (
-                  <div key={i} className="absolute inset-0 opacity-40" style={offset}>
-                    <TileFace kind={kind} />
+                  <div key={i} className="absolute opacity-40" style={offset}>
+                    <TileFace kind={kind} palette={palette} large={large} />
                   </div>
                 );
               }
@@ -174,10 +211,10 @@ function Board({
                   disabled={!tappable}
                   onClick={() => onTap(x, y)}
                   aria-label={`Tile ${kind}, column ${x + 1}, row ${y + 1}`}
-                  className="absolute inset-0 rounded-xl transition-transform active:scale-95 disabled:cursor-default enabled:cursor-pointer"
+                  className="absolute rounded-xl transition-transform active:scale-95 disabled:cursor-default enabled:cursor-pointer"
                   style={offset}
                 >
-                  <TileFace kind={kind} />
+                  <TileFace kind={kind} palette={palette} large={large} />
                 </button>
               );
             })}
@@ -188,7 +225,7 @@ function Board({
   );
 }
 
-function Tray({ tiles }: { tiles: TrayTile[] }) {
+function Tray({ tiles, palette, large }: { tiles: TrayTile[]; palette: Palette; large: boolean }) {
   return (
     <div
       className="grid w-full gap-1"
@@ -204,10 +241,8 @@ function Tray({ tiles }: { tiles: TrayTile[] }) {
             style={{ borderColor: "var(--line)" }}
           >
             {tile && (
-              <div
-                className={`h-full w-full ${tile.clearing ? "tile-clear" : "tile-enter"}`}
-              >
-                <TileFace kind={tile.kind} />
+              <div className={`h-full w-full ${tile.clearing ? "tile-clear" : "tile-enter"}`}>
+                <TileFace kind={tile.kind} palette={palette} large={large} />
               </div>
             )}
           </div>

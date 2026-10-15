@@ -9,7 +9,7 @@ describe("DailyScores", () => {
     const signIn = vi.fn();
     render(<DailyScores {...base} user={null} signIn={signIn} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Sign in with Google to post scores" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in to post scores" }));
     expect(signIn).toHaveBeenCalledTimes(1);
   });
 
@@ -22,7 +22,7 @@ describe("DailyScores", () => {
     expect(screen.queryByRole("button", { name: /Sign in/ })).not.toBeInTheDocument();
   });
 
-  it("labels the board Top daily scores and lists its entries", () => {
+  it("opens the top daily scores panel on demand", () => {
     render(
       <DailyScores
         user={null}
@@ -33,7 +33,12 @@ describe("DailyScores", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Top daily scores" })).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: "Top daily scores" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Grace")).not.toBeInTheDocument();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Grace")).toBeInTheDocument();
     expect(screen.getByText((2200).toLocaleString())).toBeInTheDocument();
   });

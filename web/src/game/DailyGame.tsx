@@ -7,8 +7,10 @@ import { hasPostedDaily, markPostedDaily } from "./dailyPost";
 import { useDailyResults } from "./useDailyResults";
 import { dailyScore } from "./scoring";
 import { TileGame, type FinishInfo } from "./TileGame";
+import type { Prefs } from "./prefs";
 
 interface DailyGameProps {
+  prefs?: Prefs;
   /** Overrides today's date, for tests. */
   now?: Date;
   /** Overrides the day's board, for tests. */
@@ -19,7 +21,7 @@ interface DailyGameProps {
  * The daily puzzle. A first win on a day, while signed in, posts that day's
  * score to the leaderboard. Only one post per day per device.
  */
-export function DailyGame({ now, board: boardOverride }: DailyGameProps) {
+export function DailyGame({ prefs, now, board: boardOverride }: DailyGameProps) {
   const key = useMemo(() => dailyKey(now ?? new Date()), []);
   const board = useMemo(() => boardOverride ?? dailyBoard(key), [key, boardOverride]);
   const { results, record } = useDailyResults();
@@ -44,12 +46,12 @@ export function DailyGame({ now, board: boardOverride }: DailyGameProps) {
 
   return (
     <>
-      <p className="text-center text-sm" style={{ color: "var(--muted)" }}>
-        {result
-          ? `Today's puzzle: ${result.outcome === "won" ? "cleared" : "lost"} in ${result.moves} moves.`
-          : "Today's puzzle is the same for everyone. One result counts per day."}
-      </p>
-      <TileGame key={key} label={`Daily ${key}`} board={board} onFinish={onFinish} />
+      {result && (
+        <p className="text-center text-sm" style={{ color: "var(--muted)" }}>
+          {`${key}: ${result.outcome === "won" ? "cleared" : "lost"} in ${result.moves} moves.`}
+        </p>
+      )}
+      <TileGame key={key} label="Daily puzzle" board={board} prefs={prefs} onFinish={onFinish} />
       <DailyScores
         user={user}
         signIn={signIn}

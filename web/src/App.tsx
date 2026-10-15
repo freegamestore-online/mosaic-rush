@@ -1,21 +1,39 @@
 import { useMemo, useState } from "react";
-import { GameShell, GameTopbar, GameAuth } from "@freegamestore/games";
+import { GameShell, GameTopbar, GameAuth, GameTextSizeToggle, GameThemeToggle } from "@freegamestore/games";
 import { TileGame } from "./game/TileGame";
 import { levelBoard } from "./game/difficulty";
 import { DailyGame } from "./game/DailyGame";
 import { useProgress } from "./game/useProgress";
+import { usePrefs } from "./game/usePrefs";
+import type { Prefs } from "./game/prefs";
 
 type Mode = "levels" | "daily";
 
 export default function App() {
   const [mode, setMode] = useState<Mode>("levels");
+  const { prefs, setPref } = usePrefs();
 
   return (
-    <GameShell topbar={<GameTopbar title="Mosaic Rush" score={0} />}>
-      <GameAuth />
-      <div className="flex flex-col items-center justify-center h-full gap-4 p-4">
-        <ModeSwitch mode={mode} onChange={setMode} />
-        {mode === "levels" ? <LevelsGame /> : <DailyGame />}
+    <GameShell
+      topbar={
+        <GameTopbar
+          title="Mosaic Rush"
+          actions={
+            <>
+              <GameAuth />
+              <GameThemeToggle />
+              <GameTextSizeToggle />
+            </>
+          }
+        />
+      }
+    >
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-3">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <ModeSwitch mode={mode} onChange={setMode} />
+          <PrefToggles prefs={prefs} onChange={setPref} />
+        </div>
+        {mode === "levels" ? <LevelsGame prefs={prefs} /> : <DailyGame prefs={prefs} />}
       </div>
     </GameShell>
   );
@@ -28,30 +46,66 @@ function ModeSwitch({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => 
   ];
   return (
     <div className="flex gap-2" role="group" aria-label="Game mode">
-      {options.map((option) => {
-        const active = option.value === mode;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onChange(option.value)}
-            className="rounded-xl px-4 py-2 text-sm font-semibold"
-            style={
-              active
-                ? { background: "var(--accent)", color: "#ffffff" }
-                : { border: "2px solid var(--line-strong)" }
-            }
-          >
-            {option.label}
-          </button>
-        );
-      })}
+      {options.map((option) => (
+        <PressButton
+          key={option.value}
+          pressed={option.value === mode}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </PressButton>
+      ))}
     </div>
   );
 }
 
-function LevelsGame() {
+function PrefToggles({
+  prefs,
+  onChange,
+}: {
+  prefs: Prefs;
+  onChange: <K extends keyof Prefs>(key: K, value: Prefs[K]) => void;
+}) {
+  return (
+    <div className="flex gap-2" role="group" aria-label="Display">
+      <PressButton pressed={prefs.largeTiles} onClick={() => onChange("largeTiles", !prefs.largeTiles)}>
+        Large tiles
+      </PressButton>
+      <PressButton pressed={prefs.colorBlind} onClick={() => onChange("colorBlind", !prefs.colorBlind)}>
+        Colour-blind palette
+      </PressButton>
+    </div>
+  );
+}
+
+/** A toggle button. `aria-pressed` tells screen readers its state; the focus ring comes from index.css. */
+function PressButton({
+  pressed,
+  onClick,
+  children,
+}: {
+  pressed: boolean;
+  onClick: () => void;
+  children: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className="whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-semibold"
+      style={
+        pressed
+          ? { background: "var(--accent)", color: "#ffffff" }
+          : { border: "2px solid var(--line-strong)" }
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function LevelsGame({ prefs }: { prefs: Prefs }) {
   const { progress, complete } = useProgress();
   const [levelNumber, setLevelNumber] = useState(progress.unlocked);
   const board = useMemo(() => levelBoard(levelNumber), [levelNumber]);
@@ -61,6 +115,7 @@ function LevelsGame() {
       key={levelNumber}
       label={`Level ${levelNumber}`}
       board={board}
+      prefs={prefs}
       onWin={() => complete(levelNumber)}
       onNext={() => setLevelNumber((n) => n + 1)}
     />
