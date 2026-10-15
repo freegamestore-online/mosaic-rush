@@ -81,6 +81,7 @@ export function useTileGame(level: readonly (readonly Stack[])[]) {
 
   return {
     game,
+    moves: session.moves,
     tray,
     busy: pending !== null,
     tap,

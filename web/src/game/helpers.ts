@@ -26,17 +26,19 @@ export interface Session {
   state: GameState;
   previous: GameState | null;
   uses: HelperUses;
+  /** Taps that changed the board. Undo does not lower it. */
+  moves: number;
 }
 
 export function startSession(cells: readonly (readonly Stack[])[]): Session {
-  return { state: createGame(cells), previous: null, uses: { ...HELPER_LIMITS } };
+  return { state: createGame(cells), previous: null, uses: { ...HELPER_LIMITS }, moves: 0 };
 }
 
 /** Take a tile by tapping. Returns the same session if the tap does nothing. */
 export function playTap(session: Session, x: number, y: number): Session {
   const next = takeTile(session.state, x, y);
   if (next === session.state) return session;
-  return { ...session, state: next, previous: session.state };
+  return { ...session, state: next, previous: session.state, moves: session.moves + 1 };
 }
 
 /** Restore the position from before the last change. One step deep. */
@@ -46,6 +48,7 @@ export function undo(session: Session): Session {
     state: session.previous,
     previous: null,
     uses: { ...session.uses, undo: session.uses.undo - 1 },
+    moves: session.moves,
   };
 }
 
@@ -120,6 +123,7 @@ function spend(session: Session, state: GameState, helper: keyof HelperUses): Se
     state,
     previous: session.state,
     uses: { ...session.uses, [helper]: session.uses[helper] - 1 },
+    moves: session.moves,
   };
 }
 

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { TRAY_CAPACITY, canTakeTile, isBoardCleared, type GameState, type Stack } from "./boardState";
+import type { DailyResult } from "./dailyResults";
 import type { HelperUses } from "./helpers";
 import { useTileGame, type TrayTile } from "./useTileGame";
 
@@ -30,21 +31,30 @@ function TileFace({ kind }: { kind: string }) {
 }
 
 interface TileGameProps {
-  levelNumber: number;
+  /** Names the board in the status line, e.g. "Level 3" or "Daily 2026-10-15". */
+  label: string;
   board: Stack[][];
   /** Called once when the board is fully cleared. */
   onWin?: () => void;
+  /** Called once when the board is won or lost, with the move count. */
+  onFinish?: (result: DailyResult) => void;
   onNext?: () => void;
 }
 
-export function TileGame({ levelNumber, board, onWin, onNext }: TileGameProps) {
-  const { game, tray, busy, tap, restart, helpers, undo, shuffle, returnThree } = useTileGame(board);
+export function TileGame({ label, board, onWin, onFinish, onNext }: TileGameProps) {
+  const { game, moves, tray, busy, tap, restart, helpers, undo, shuffle, returnThree } =
+    useTileGame(board);
   const lost = game.status === "lost";
   const won = isBoardCleared(game);
+  const outcome = won ? "won" : lost ? "lost" : null;
 
   useEffect(() => {
     if (won) onWin?.();
   }, [won]);
+
+  useEffect(() => {
+    if (outcome) onFinish?.({ outcome, moves });
+  }, [outcome]);
 
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-6">
@@ -57,10 +67,10 @@ export function TileGame({ levelNumber, board, onWin, onNext }: TileGameProps) {
       />
       <p className="min-h-6 text-center" style={{ color: "var(--muted)" }} aria-live="polite">
         {won
-          ? `Level ${levelNumber} cleared!`
+          ? `${label} cleared!`
           : lost
             ? "Tray full. Game over."
-            : `Level ${levelNumber}. Tap a top tile to move it to the tray.`}
+            : `${label}. Tap a top tile to move it to the tray.`}
       </p>
       {lost && <ActionButton label="Play again" onClick={restart} />}
       {won && onNext && <ActionButton label="Next level" onClick={onNext} />}

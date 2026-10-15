@@ -27,6 +27,16 @@ describe("startSession", () => {
   });
 });
 
+describe("moves", () => {
+  it("counts taps that change the board and is not lowered by undo", () => {
+    const start = startSession(board);
+    expect(start.moves).toBe(0);
+    expect(playTap(start, 0, 0).moves).toBe(1);
+    expect(playTap(start, 9, 9).moves).toBe(0);
+    expect(undo(playTap(start, 0, 0)).moves).toBe(1);
+  });
+});
+
 describe("undo", () => {
   it("reverses the last tile move", () => {
     const start = startSession(board);

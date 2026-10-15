@@ -15,7 +15,7 @@ describe("TileGame", () => {
   });
 
   it("only makes the top tile of each stack tappable", () => {
-    render(<TileGame levelNumber={1} board={[[["R", "O"]]]} />);
+    render(<TileGame label="Level 1" board={[[["R", "O"]]]} />);
 
     const buttons = screen.getAllByRole("button", { name: /^Tile / });
     expect(buttons).toHaveLength(1);
@@ -23,7 +23,7 @@ describe("TileGame", () => {
   });
 
   it("moves a tapped tile into the tray and reveals the one beneath", () => {
-    render(<TileGame levelNumber={1} board={[[["R", "O"]]]} />);
+    render(<TileGame label="Level 1" board={[[["R", "O"]]]} />);
 
     fireEvent.click(tapped("Tile O, column 1, row 1"));
 
@@ -33,14 +33,14 @@ describe("TileGame", () => {
   });
 
   it("shows seven tray slots", () => {
-    render(<TileGame levelNumber={1} board={[[["R"]]]} />);
+    render(<TileGame label="Level 1" board={[[["R"]]]} />);
 
     const tray = screen.getByLabelText("Tray, 0 of 7 tiles");
     expect(tray.children).toHaveLength(7);
   });
 
   it("clears three matching tiles from the tray after a short delay", () => {
-    render(<TileGame levelNumber={1} board={[[["R"], ["R"], ["R"]]]} />);
+    render(<TileGame label="Level 1" board={[[["R"], ["R"], ["R"]]]} />);
 
     fireEvent.click(tapped("Tile R, column 1, row 1"));
     fireEvent.click(tapped("Tile R, column 2, row 1"));
@@ -57,7 +57,7 @@ describe("TileGame", () => {
   });
 
   it("ignores taps while a match is clearing", () => {
-    render(<TileGame levelNumber={1} board={[[["R"], ["R"], ["R"], ["O"]]]} />);
+    render(<TileGame label="Level 1" board={[[["R"], ["R"], ["R"], ["O"]]]} />);
 
     fireEvent.click(tapped("Tile R, column 1, row 1"));
     fireEvent.click(tapped("Tile R, column 2, row 1"));
@@ -69,7 +69,7 @@ describe("TileGame", () => {
 
   it("shows game over when the tray holds seven tiles and allows a restart", () => {
     const kinds = ["R", "O", "Y", "G", "T", "B", "V", "P"];
-    render(<TileGame levelNumber={1} board={[kinds.map((kind) => [kind])]} />);
+    render(<TileGame label="Level 1" board={[kinds.map((kind) => [kind])]} />);
 
     kinds.slice(0, 7).forEach((kind, x) => {
       fireEvent.click(tapped(`Tile ${kind}, column ${x + 1}, row 1`));
@@ -88,7 +88,7 @@ describe("TileGame", () => {
     const onWin = vi.fn();
     const onNext = vi.fn();
     render(
-      <TileGame levelNumber={2} board={[[["R"], ["R"], ["R"]]]} onWin={onWin} onNext={onNext} />,
+      <TileGame label="Level 2" board={[[["R"], ["R"], ["R"]]]} onWin={onWin} onNext={onNext} />,
     );
 
     fireEvent.click(tapped("Tile R, column 1, row 1"));
@@ -105,8 +105,35 @@ describe("TileGame", () => {
     expect(onNext).toHaveBeenCalledTimes(1);
   });
 
+  it("reports a loss with the move count once the tray fills", () => {
+    const onFinish = vi.fn();
+    const kinds = ["R", "O", "Y", "G", "T", "B", "V", "P"];
+    render(<TileGame label="Daily" board={[kinds.map((kind) => [kind])]} onFinish={onFinish} />);
+
+    kinds.slice(0, 7).forEach((kind, x) => {
+      fireEvent.click(tapped(`Tile ${kind}, column ${x + 1}, row 1`));
+    });
+
+    expect(onFinish).toHaveBeenCalledTimes(1);
+    expect(onFinish).toHaveBeenCalledWith({ outcome: "lost", moves: 7 });
+  });
+
+  it("reports a win with the move count", () => {
+    const onFinish = vi.fn();
+    render(<TileGame label="Daily" board={[[["R"], ["R"], ["R"]]]} onFinish={onFinish} />);
+
+    fireEvent.click(tapped("Tile R, column 1, row 1"));
+    fireEvent.click(tapped("Tile R, column 2, row 1"));
+    fireEvent.click(tapped("Tile R, column 3, row 1"));
+    act(() => {
+      vi.advanceTimersByTime(CLEAR_DELAY_MS);
+    });
+
+    expect(onFinish).toHaveBeenCalledWith({ outcome: "won", moves: 3 });
+  });
+
   it("shows helper buttons that start disabled and undo a tap", () => {
-    render(<TileGame levelNumber={1} board={[[["R", "O"]]]} />);
+    render(<TileGame label="Level 1" board={[[["R", "O"]]]} />);
 
     const undo = screen.getByRole("button", { name: "Undo (3)" });
     expect(undo).toBeDisabled();
