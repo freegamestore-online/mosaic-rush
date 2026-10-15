@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Leaderboard, type LeaderboardEntry, type User } from "@freegamestore/games";
+import { GameButton, Leaderboard, type LeaderboardEntry, type User } from "@freegamestore/games";
 
 /** The one board every daily score is posted to. The platform has no per-day boards. */
 export const LEADERBOARD_GAME_ID = "mosaic-rush";
@@ -26,14 +26,9 @@ export function DailyScores({ user, signIn, topScores, recentScores, loading }: 
           Signed in as {user.name}
         </span>
       ) : (
-        <button
-          type="button"
-          onClick={signIn}
-          className="whitespace-nowrap rounded-xl border-2 px-3 py-1.5 text-sm font-semibold"
-          style={{ borderColor: "var(--line-strong)" }}
-        >
+        <GameButton variant="secondary" size="sm" onClick={signIn}>
           Sign in to post scores
-        </button>
+        </GameButton>
       )}
       <button
         type="button"

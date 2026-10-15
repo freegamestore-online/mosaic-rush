@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useGameSounds } from "@freegamestore/games";
+import { GameButton, useGameSounds } from "@freegamestore/games";
 import { TRAY_CAPACITY, canTakeTile, isBoardCleared, type GameState, type Stack } from "./boardState";
 import type { DailyResult } from "./dailyResults";
 import type { HelperUses } from "./helpers";
@@ -135,16 +135,11 @@ function HelperBar({
       {(Object.keys(HELPER_LABELS) as (keyof HelperUses)[]).map((key) => {
         const { available, remaining } = helpers[key];
         return (
-          <button
-            key={key}
-            type="button"
-            disabled={busy || !available}
-            onClick={onUse[key]}
-            className="flex-1 whitespace-nowrap rounded-xl border-2 px-1 py-2 text-xs font-semibold disabled:opacity-40"
-            style={{ borderColor: "var(--line-strong)" }}
-          >
-            {`${HELPER_LABELS[key]} (${remaining})`}
-          </button>
+          <div key={key} className="flex-1">
+            <GameButton variant="secondary" size="sm" block disabled={busy || !available} onClick={onUse[key]}>
+              {`${HELPER_LABELS[key]} (${remaining})`}
+            </GameButton>
+          </div>
         );
       })}
     </div>
@@ -153,14 +148,9 @@ function HelperBar({
 
 function ActionButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-xl px-5 py-2 font-semibold text-white"
-      style={{ background: "var(--accent)" }}
-    >
+    <GameButton variant="primary" onClick={onClick}>
       {label}
-    </button>
+    </GameButton>
   );
 }
 
