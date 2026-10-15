@@ -1,5 +1,4 @@
 import { TRAY_CAPACITY, canTakeTile, type GameState, type Stack } from "./boardState";
-import { DEMO_LEVEL } from "./demoLevel";
 import { useTileGame, type TrayTile } from "./useTileGame";
 
 const TILE_COLORS: Record<string, string> = {
@@ -28,7 +27,7 @@ function TileFace({ kind }: { kind: string }) {
   );
 }
 
-export function TileGame({ level = DEMO_LEVEL }: { level?: Stack[][] }) {
+export function TileGame({ level }: { level: Stack[][] }) {
   const { game, tray, busy, tap, restart } = useTileGame(level);
   const lost = game.status === "lost";
 
