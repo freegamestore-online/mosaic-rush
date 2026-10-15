@@ -18,6 +18,15 @@ export default function App() {
       topbar={
         <GameTopbar
           title="Mosaic Rush"
+          about={
+            <p>
+              More free games at{" "}
+              <a href="https://freegamestore.online" target="_blank" rel="noopener noreferrer">
+                freegamestore.online
+              </a>
+              .
+            </p>
+          }
           actions={
             <>
               <GameAuth />

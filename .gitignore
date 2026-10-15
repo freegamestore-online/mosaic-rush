@@ -6,3 +6,7 @@ dist
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Secrets
+.env
+.env.*

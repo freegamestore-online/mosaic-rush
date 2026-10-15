@@ -5,6 +5,7 @@ import type { DailyResult } from "./dailyResults";
 import type { HelperUses } from "./helpers";
 import { COLORBLIND_PALETTE, DEFAULT_PALETTE, tileColor, tileText, type Palette } from "./palette";
 import { DEFAULT_PREFS, type Prefs } from "./prefs";
+import { TileSymbol } from "./tileArt";
 import { useTileGame, type TrayTile } from "./useTileGame";
 
 /** Vertical offset between tiles in one stack, in px. */
@@ -26,7 +27,8 @@ function TileFace({ kind, palette, large }: { kind: string; palette: Palette; la
       }`}
       style={{ background: fill, color: tileText(fill) }}
     >
-      {kind}
+      <TileSymbol kind={kind} />
+      <span className="sr-only">{kind}</span>
     </span>
   );
 }

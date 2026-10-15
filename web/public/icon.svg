@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Mosaic Rush icon. Original art. The full-bleed background suits maskable icons. -->
+  <rect width="512" height="512" fill="#111827"/>
+  <rect x="120" y="120" width="128" height="128" rx="28" fill="#ef4444"/>
+  <g transform="translate(145.6 145.6) scale(3.2)" fill="#ffffff"><path d="M12 5a7 7 0 1 0 0 14a7 7 0 1 0 0-14z"/></g>
+  <rect x="264" y="120" width="128" height="128" rx="28" fill="#f97316"/>
+  <g transform="translate(289.6 145.6) scale(3.2)" fill="#ffffff"><path d="M7 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></g>
+  <rect x="120" y="264" width="128" height="128" rx="28" fill="#22c55e"/>
+  <g transform="translate(145.6 289.6) scale(3.2)" fill="#ffffff"><path d="M12 3l9 9-9 9-9-9z"/></g>
+  <rect x="264" y="264" width="128" height="128" rx="28" fill="#3b82f6"/>
+  <g transform="translate(289.6 289.6) scale(3.2)" fill="#ffffff"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/></g>
+</svg>
