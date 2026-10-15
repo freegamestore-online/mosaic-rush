@@ -34,15 +34,13 @@ export function canTakeTile(state: GameState, x: number, y: number): boolean {
  * Take the top tile of the stack at column `x`, row `y` into the tray.
  *
  * Taking from an empty or out-of-bounds cell, or after the game is lost,
- * returns the state unchanged. Taking when the tray already holds
- * `TRAY_CAPACITY` tiles loses the game and leaves the board and tray as they were.
- * Otherwise, if the tray now holds `MATCH_SIZE` tiles of the taken kind,
- * those tiles are removed.
+ * returns the state unchanged. Otherwise the tile joins the tray, any
+ * `MATCH_SIZE` tiles of the taken kind are cleared, and the game is lost
+ * if the tray then holds `TRAY_CAPACITY` tiles.
  */
 export function takeTile(state: GameState, x: number, y: number): GameState {
   const top = getStack(state, x, y)?.at(-1);
   if (state.status !== "playing" || top === undefined) return state;
-  if (state.tray.length >= TRAY_CAPACITY) return { ...state, status: "lost" };
 
   const cells = state.cells.map((row, rowY) =>
     rowY !== y
@@ -50,7 +48,8 @@ export function takeTile(state: GameState, x: number, y: number): GameState {
       : row.map((stack, colX) => (colX !== x ? stack : stack.slice(0, -1))),
   );
   const tray = clearMatch([...state.tray, top], top);
-  return { cells, tray, status: "playing" };
+  const status = tray.length >= TRAY_CAPACITY ? "lost" : "playing";
+  return { cells, tray, status };
 }
 
 /** Remove the first `MATCH_SIZE` tiles of `kind` once the tray holds that many. */

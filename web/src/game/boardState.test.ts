@@ -81,9 +81,8 @@ describe("takeTile", () => {
     expect(next.tray).toEqual(["A", "A"]);
   });
 
-  it("fills the tray up to capacity without ending the game", () => {
-    const kinds = ["A", "B", "C", "D", "E", "F", "G"];
-    expect(kinds).toHaveLength(TRAY_CAPACITY);
+  it("keeps playing while the tray holds fewer than 7 tiles", () => {
+    const kinds = ["A", "B", "C", "D", "E", "F"];
     const state = createGame([kinds.map((kind) => [kind])]);
     const next = kinds.reduce((s, _kind, x) => takeTile(s, x, 0), state);
 
@@ -91,37 +90,33 @@ describe("takeTile", () => {
     expect(next.status).toBe("playing");
   });
 
-  it("ends the game when a tile is added to a full tray", () => {
-    const kinds = ["A", "B", "C", "D", "E", "F", "G", "H"];
+  it("loses the game when the tray holds 7 tiles after clearing", () => {
+    const kinds = ["A", "B", "C", "D", "E", "F", "G"];
     const state = createGame([kinds.map((kind) => [kind])]);
-    const full = kinds.slice(0, TRAY_CAPACITY).reduce((s, _kind, x) => takeTile(s, x, 0), state);
-    const next = takeTile(full, TRAY_CAPACITY, 0);
+    const next = kinds.reduce((s, _kind, x) => takeTile(s, x, 0), state);
 
+    expect(next.tray).toEqual(kinds);
     expect(next.status).toBe("lost");
-    expect(next.tray).toEqual(full.tray);
-    expect(next.cells).toEqual(full.cells);
   });
 
-  it("ends the game on a full tray even if the new tile would complete a match", () => {
-    // Tray holds A, A, B, B, C, C, D. Taking another A would form a match.
-    const cells = [[["A"], ["A"], ["B"], ["B"], ["C"], ["C"], ["D"], ["A"]]];
+  it("clears a match on the 7th slot and keeps playing", () => {
+    // Tray holds A, A, B, B, C, C. Taking another A completes a match of A
+    // and leaves 4 tiles, so the game goes on.
+    const cells = [[["A"], ["A"], ["B"], ["B"], ["C"], ["C"], ["A"]]];
     const state = createGame(cells);
-    const full = [0, 1, 2, 3, 4, 5, 6].reduce((s, x) => takeTile(s, x, 0), state);
-    const next = takeTile(full, 7, 0);
+    const almost = [0, 1, 2, 3, 4, 5].reduce((s, x) => takeTile(s, x, 0), state);
+    const next = takeTile(almost, 6, 0);
 
-    expect(next.status).toBe("lost");
-    expect(next.tray).toHaveLength(TRAY_CAPACITY);
+    expect(next.tray).toEqual(["B", "B", "C", "C"]);
+    expect(next.status).toBe("playing");
   });
 
   it("ignores every move after the game is lost", () => {
     const kinds = ["A", "B", "C", "D", "E", "F", "G", "H"];
     const state = createGame([kinds.map((kind) => [kind])]);
-    const lost = takeTile(
-      kinds.slice(0, TRAY_CAPACITY).reduce((s, _kind, x) => takeTile(s, x, 0), state),
-      TRAY_CAPACITY,
-      0,
-    );
+    const lost = kinds.slice(0, TRAY_CAPACITY).reduce((s, _kind, x) => takeTile(s, x, 0), state);
 
+    expect(lost.status).toBe("lost");
     expect(takeTile(lost, TRAY_CAPACITY, 0)).toBe(lost);
     expect(canTakeTile(lost, TRAY_CAPACITY, 0)).toBe(false);
   });
