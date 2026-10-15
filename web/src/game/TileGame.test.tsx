@@ -115,7 +115,7 @@ describe("TileGame", () => {
     });
 
     expect(onFinish).toHaveBeenCalledTimes(1);
-    expect(onFinish).toHaveBeenCalledWith({ outcome: "lost", moves: 7 });
+    expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outcome: "lost", moves: 7 }));
   });
 
   it("reports a win with the move count", () => {
@@ -129,7 +129,7 @@ describe("TileGame", () => {
       vi.advanceTimersByTime(CLEAR_DELAY_MS);
     });
 
-    expect(onFinish).toHaveBeenCalledWith({ outcome: "won", moves: 3 });
+    expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outcome: "won", moves: 3 }));
   });
 
   it("shows helper buttons that start disabled and undo a tap", () => {

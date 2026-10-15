@@ -2,9 +2,7 @@ import { useMemo, useState } from "react";
 import { GameShell, GameTopbar, GameAuth } from "@freegamestore/games";
 import { TileGame } from "./game/TileGame";
 import { levelBoard } from "./game/difficulty";
-import { dailyBoard, dailyKey } from "./game/daily";
-import { useDailyResults } from "./game/useDailyResults";
-import { DailyScores } from "./game/DailyScores";
+import { DailyGame } from "./game/DailyGame";
 import { useProgress } from "./game/useProgress";
 
 type Mode = "levels" | "daily";
@@ -66,29 +64,5 @@ function LevelsGame() {
       onWin={() => complete(levelNumber)}
       onNext={() => setLevelNumber((n) => n + 1)}
     />
-  );
-}
-
-function DailyGame() {
-  const key = useMemo(() => dailyKey(new Date()), []);
-  const board = useMemo(() => dailyBoard(key), [key]);
-  const { results, record } = useDailyResults();
-  const result = results[key];
-
-  return (
-    <>
-      <p className="text-center text-sm" style={{ color: "var(--muted)" }}>
-        {result
-          ? `Today's puzzle: ${result.outcome === "won" ? "cleared" : "lost"} in ${result.moves} moves.`
-          : "Today's puzzle is the same for everyone. One result counts per day."}
-      </p>
-      <TileGame
-        key={key}
-        label={`Daily ${key}`}
-        board={board}
-        onFinish={(finished) => record(key, finished)}
-      />
-      <DailyScores />
-    </>
   );
 }

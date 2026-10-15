@@ -30,19 +30,26 @@ function TileFace({ kind }: { kind: string }) {
   );
 }
 
+export interface FinishInfo extends DailyResult {
+  /** Whole seconds from the first tap to the finish. */
+  seconds: number;
+  /** Helper uses left unspent. */
+  unusedHelpers: number;
+}
+
 interface TileGameProps {
   /** Names the board in the status line, e.g. "Level 3" or "Daily 2026-10-15". */
   label: string;
   board: Stack[][];
   /** Called once when the board is fully cleared. */
   onWin?: () => void;
-  /** Called once when the board is won or lost, with the move count. */
-  onFinish?: (result: DailyResult) => void;
+  /** Called once when the board is won or lost. */
+  onFinish?: (finish: FinishInfo) => void;
   onNext?: () => void;
 }
 
 export function TileGame({ label, board, onWin, onFinish, onNext }: TileGameProps) {
-  const { game, moves, tray, busy, tap, restart, helpers, undo, shuffle, returnThree } =
+  const { game, moves, startedAt, tray, busy, tap, restart, helpers, undo, shuffle, returnThree } =
     useTileGame(board);
   const lost = game.status === "lost";
   const won = isBoardCleared(game);
@@ -53,7 +60,10 @@ export function TileGame({ label, board, onWin, onFinish, onNext }: TileGameProp
   }, [won]);
 
   useEffect(() => {
-    if (outcome) onFinish?.({ outcome, moves });
+    if (!outcome) return;
+    const seconds = startedAt === null ? 0 : Math.floor((Date.now() - startedAt) / 1000);
+    const unusedHelpers = helpers.undo.remaining + helpers.shuffle.remaining + helpers.returnThree.remaining;
+    onFinish?.({ outcome, moves, seconds, unusedHelpers });
   }, [outcome]);
 
   return (

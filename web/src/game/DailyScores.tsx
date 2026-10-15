@@ -1,16 +1,18 @@
-import { Leaderboard, useAuth, useLeaderboard } from "@freegamestore/games";
+import { Leaderboard, type LeaderboardEntry, type User } from "@freegamestore/games";
 
-/**
- * The platform leaderboard for this game. The SDK and worker key boards by
- * game only, so these are all-time scores, not a per-day board.
- */
+/** The one board every daily score is posted to. The platform has no per-day boards. */
 export const LEADERBOARD_GAME_ID = "tile-match";
 
-/** Sign-in status and the platform leaderboard, shown beside the daily puzzle. */
-export function DailyScores() {
-  const { user, signIn } = useAuth();
-  const { topScores, recentScores, loading } = useLeaderboard(LEADERBOARD_GAME_ID);
+interface DailyScoresProps {
+  user: User | null;
+  signIn: () => void;
+  topScores: LeaderboardEntry[];
+  recentScores: LeaderboardEntry[];
+  loading: boolean;
+}
 
+/** Sign-in status and the top daily scores, shown beside the daily puzzle. */
+export function DailyScores({ user, signIn, topScores, recentScores, loading }: DailyScoresProps) {
   return (
     <section className="flex w-full flex-col items-center gap-3" aria-label="Leaderboard">
       {user ? (
@@ -27,7 +29,7 @@ export function DailyScores() {
           Sign in with Google to post scores
         </button>
       )}
-      <h2 className="text-sm font-semibold">All-time top scores</h2>
+      <h2 className="text-sm font-semibold">Top daily scores</h2>
       <Leaderboard topScores={topScores} recentScores={recentScores} loading={loading} />
     </section>
   );

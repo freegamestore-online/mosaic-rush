@@ -28,6 +28,8 @@ interface PendingClear {
 export function useTileGame(level: readonly (readonly Stack[])[]) {
   const [session, setSession] = useState(() => startSession(level));
   const [pending, setPending] = useState<PendingClear | null>(null);
+  /** When the first tap landed. Timing starts there, not when the level loaded. */
+  const [startedAt, setStartedAt] = useState<number | null>(null);
   const { state: game } = session;
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export function useTileGame(level: readonly (readonly Stack[])[]) {
 
   const tap = (x: number, y: number) => {
     if (pending) return;
+    if (startedAt === null) setStartedAt(Date.now());
     const top = getStack(game, x, y)?.at(-1);
     const next = playTap(session, x, y);
     if (top === undefined || next === session) return;
@@ -64,6 +67,7 @@ export function useTileGame(level: readonly (readonly Stack[])[]) {
 
   const restart = () => {
     setPending(null);
+    setStartedAt(null);
     setSession(startSession(level));
   };
 
@@ -82,6 +86,7 @@ export function useTileGame(level: readonly (readonly Stack[])[]) {
   return {
     game,
     moves: session.moves,
+    startedAt,
     tray,
     busy: pending !== null,
     tap,
