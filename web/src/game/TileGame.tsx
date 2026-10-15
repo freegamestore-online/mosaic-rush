@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { TRAY_CAPACITY, canTakeTile, isBoardCleared, type GameState, type Stack } from "./boardState";
+import type { HelperUses } from "./helpers";
 import { useTileGame, type TrayTile } from "./useTileGame";
 
 const TILE_COLORS: Record<string, string> = {
@@ -37,7 +38,7 @@ interface TileGameProps {
 }
 
 export function TileGame({ levelNumber, board, onWin, onNext }: TileGameProps) {
-  const { game, tray, busy, tap, restart } = useTileGame(board);
+  const { game, tray, busy, tap, restart, helpers, undo, shuffle, returnThree } = useTileGame(board);
   const lost = game.status === "lost";
   const won = isBoardCleared(game);
 
@@ -49,6 +50,11 @@ export function TileGame({ levelNumber, board, onWin, onNext }: TileGameProps) {
     <div className="flex w-full max-w-sm flex-col items-center gap-6">
       <Board game={game} disabled={busy || lost || won} onTap={tap} />
       <Tray tiles={tray} />
+      <HelperBar
+        helpers={helpers}
+        busy={busy || won}
+        onUse={{ undo, shuffle, returnThree }}
+      />
       <p className="min-h-6 text-center" style={{ color: "var(--muted)" }} aria-live="polite">
         {won
           ? `Level ${levelNumber} cleared!`
@@ -58,6 +64,42 @@ export function TileGame({ levelNumber, board, onWin, onNext }: TileGameProps) {
       </p>
       {lost && <ActionButton label="Play again" onClick={restart} />}
       {won && onNext && <ActionButton label="Next level" onClick={onNext} />}
+    </div>
+  );
+}
+
+const HELPER_LABELS: Record<keyof HelperUses, string> = {
+  undo: "Undo",
+  shuffle: "Shuffle",
+  returnThree: "Return 3",
+};
+
+function HelperBar({
+  helpers,
+  busy,
+  onUse,
+}: {
+  helpers: Record<keyof HelperUses, { available: boolean; remaining: number }>;
+  busy: boolean;
+  onUse: Record<keyof HelperUses, () => void>;
+}) {
+  return (
+    <div className="flex w-full gap-2">
+      {(Object.keys(HELPER_LABELS) as (keyof HelperUses)[]).map((key) => {
+        const { available, remaining } = helpers[key];
+        return (
+          <button
+            key={key}
+            type="button"
+            disabled={busy || !available}
+            onClick={onUse[key]}
+            className="flex-1 rounded-xl border-2 px-2 py-2 text-sm font-semibold disabled:opacity-40"
+            style={{ borderColor: "var(--line-strong)" }}
+          >
+            {`${HELPER_LABELS[key]} (${remaining})`}
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -17,7 +17,7 @@ describe("TileGame", () => {
   it("only makes the top tile of each stack tappable", () => {
     render(<TileGame levelNumber={1} board={[[["R", "O"]]]} />);
 
-    const buttons = screen.getAllByRole("button");
+    const buttons = screen.getAllByRole("button", { name: /^Tile / });
     expect(buttons).toHaveLength(1);
     expect(buttons[0]).toHaveAccessibleName("Tile O, column 1, row 1");
   });
@@ -103,5 +103,22 @@ describe("TileGame", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Next level" }));
     expect(onNext).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows helper buttons that start disabled and undo a tap", () => {
+    render(<TileGame levelNumber={1} board={[[["R", "O"]]]} />);
+
+    const undo = screen.getByRole("button", { name: "Undo (3)" });
+    expect(undo).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Shuffle (2)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Return 3 (2)" })).toBeDisabled();
+
+    fireEvent.click(tapped("Tile O, column 1, row 1"));
+    expect(screen.getByLabelText("Tray, 1 of 7 tiles")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo (3)" }));
+    expect(screen.getByLabelText("Tray, 0 of 7 tiles")).toBeInTheDocument();
+    expect(tapped("Tile O, column 1, row 1")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Undo (2)" })).toBeDisabled();
   });
 });
