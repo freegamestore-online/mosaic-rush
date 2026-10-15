@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GameButton, useGameSounds } from "@freegamestore/games";
 import { TRAY_CAPACITY, canTakeTile, isBoardCleared, type GameState, type Stack } from "./boardState";
 import type { DailyResult } from "./dailyResults";
@@ -9,6 +9,8 @@ import { formatTime } from "./scoring";
 import { TileSymbol } from "./tileArt";
 import { useTileGame, type TrayTile } from "./useTileGame";
 import { ResultOverlay, type ResultStat } from "../ui/ResultOverlay";
+import { ParticleLayer, type ParticleLayerHandle } from "../feel/ParticleLayer";
+import type { BurstOptions } from "../feel/particles";
 
 /** Vertical offset between tiles in one stack, in px. */
 const STACK_OFFSET = 4;
@@ -19,6 +21,12 @@ const STACK_OFFSET = 4;
  */
 const BOARD_WIDTH = "min(24rem, 92vw, calc(100svh - 22rem))";
 const BOARD_WIDTH_LARGE = "min(30rem, 92vw, calc(100svh - 22rem))";
+
+/** A cleared trio sprays upward from each of its tray tiles. */
+const CLEAR_BURST: BurstOptions = { count: 14, speed: [160, 340], size: [4, 7], life: 0.6, angle: -Math.PI / 2, spread: Math.PI * 0.9 };
+
+/** A win rings out from the middle of the board. */
+const WIN_BURST: BurstOptions = { count: 40, speed: [220, 460], size: [5, 9], life: 1.1 };
 
 /**
  * A tile's face. The fill is set inline from the palette, so it always wins over
@@ -37,6 +45,30 @@ export function TileFace({ kind, palette, large }: { kind: string; palette: Pale
       <span className="sr-only">{kind}</span>
     </span>
   );
+}
+
+/**
+ * Launch a burst from the centre of each element, in the pixel space of `root`.
+ * `colours` picks the colours for each element.
+ */
+function burstFrom(
+  root: HTMLElement,
+  layer: ParticleLayerHandle | null,
+  elements: Iterable<HTMLElement>,
+  options: BurstOptions,
+  colours: (element: HTMLElement) => readonly string[],
+): void {
+  if (!layer) return;
+  const origin = root.getBoundingClientRect();
+  for (const element of elements) {
+    const rect = element.getBoundingClientRect();
+    layer.burst(
+      rect.left - origin.left + rect.width / 2,
+      rect.top - origin.top + rect.height / 2,
+      colours(element),
+      options,
+    );
+  }
 }
 
 /** What a finished game looked like, before any score is applied. */
@@ -90,6 +122,8 @@ export function TileGame({
     useTileGame(board);
   const sounds = useGameSounds();
   const [finish, setFinish] = useState<Finish | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const particlesRef = useRef<ParticleLayerHandle>(null);
   const lost = game.status === "lost";
   const won = isBoardCleared(game);
   const outcome = won ? "won" : lost ? "lost" : null;
@@ -102,11 +136,25 @@ export function TileGame({
   }, [moves]);
 
   useEffect(() => {
-    if (busy) sounds.playClear();
+    if (!busy) return;
+    sounds.playClear();
+    // Each tile of the trio that is clearing sprays in its own colour.
+    const root = rootRef.current;
+    if (root) {
+      burstFrom(root, particlesRef.current, root.querySelectorAll<HTMLElement>(".tile-clear"), CLEAR_BURST, (el) => [
+        tileColor(palette, el.dataset.kind ?? ""),
+      ]);
+    }
   }, [busy]);
 
   useEffect(() => {
     if (won) onWin?.();
+  }, [won]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const board = root?.querySelector<HTMLElement>('[role="group"][aria-label="Board"]');
+    if (won && root && board) burstFrom(root, particlesRef.current, [board], WIN_BURST, () => Object.values(palette));
   }, [won]);
 
   useEffect(() => {
@@ -141,11 +189,12 @@ export function TileGame({
 
   return (
     <div
+      ref={rootRef}
       className="relative flex flex-col items-center gap-3"
       style={{ width: prefs.largeTiles ? BOARD_WIDTH_LARGE : BOARD_WIDTH }}
     >
       <Board game={game} disabled={busy || lost || won} onTap={tap} palette={palette} large={prefs.largeTiles} />
-      <Tray tiles={tray} palette={palette} large={prefs.largeTiles} />
+      <Tray tiles={tray} palette={palette} large={prefs.largeTiles} shake={lost} />
       <HelperBar
         helpers={helpers}
         busy={busy || won}
@@ -155,6 +204,7 @@ export function TileGame({
         {finish ? "" : `${label}. Tap a top tile.`}
       </p>
       {finish && <Result finish={finish} label={label} onRestart={restart} onNext={onNext} />}
+      <ParticleLayer ref={particlesRef} />
     </div>
   );
 }
@@ -283,7 +333,7 @@ function Board({
                   disabled={!tappable}
                   onClick={() => onTap(x, y)}
                   aria-label={`Tile ${kind}, column ${x + 1}, row ${y + 1}`}
-                  className="absolute rounded-xl transition-transform active:scale-95 disabled:cursor-default enabled:cursor-pointer"
+                  className="tile-reveal absolute rounded-xl transition-transform active:scale-95 disabled:cursor-default enabled:cursor-pointer"
                   style={offset}
                 >
                   <TileFace kind={kind} palette={palette} large={large} />
@@ -297,10 +347,21 @@ function Board({
   );
 }
 
-function Tray({ tiles, palette, large }: { tiles: TrayTile[]; palette: Palette; large: boolean }) {
+function Tray({
+  tiles,
+  palette,
+  large,
+  shake,
+}: {
+  tiles: TrayTile[];
+  palette: Palette;
+  large: boolean;
+  /** Shakes the tray once, when the game is lost. */
+  shake: boolean;
+}) {
   return (
     <div
-      className="grid w-full gap-1"
+      className={`grid w-full gap-1 ${shake ? "tray-shake" : ""}`}
       style={{ gridTemplateColumns: `repeat(${TRAY_CAPACITY}, minmax(0, 1fr))` }}
       aria-label={`Tray, ${tiles.length} of ${TRAY_CAPACITY} tiles`}
     >
@@ -313,7 +374,10 @@ function Tray({ tiles, palette, large }: { tiles: TrayTile[]; palette: Palette; 
             style={{ borderColor: "var(--line)" }}
           >
             {tile && (
-              <div className={`h-full w-full ${tile.clearing ? "tile-clear" : "tile-enter"}`}>
+              <div
+                className={`h-full w-full ${tile.clearing ? "tile-clear" : "tile-enter"}`}
+                data-kind={tile.kind}
+              >
                 <TileFace kind={tile.kind} palette={palette} large={large} />
               </div>
             )}
