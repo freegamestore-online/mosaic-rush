@@ -400,7 +400,7 @@ function Board({
                   disabled={!tappable}
                   onClick={(event) => onTap(x, y, event.currentTarget)}
                   aria-label={`Tile ${kind}, column ${x + 1}, row ${y + 1}`}
-                  className="tile-reveal absolute rounded-xl transition-transform active:scale-95 disabled:cursor-default enabled:cursor-pointer"
+                  className="tile-reveal tile-tilt absolute rounded-xl transition-transform active:scale-95 disabled:cursor-default enabled:cursor-pointer"
                   style={offset}
                 >
                   <TileFace kind={kind} palette={palette} large={large} />

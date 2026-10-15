@@ -14,6 +14,16 @@
  *   --panel        raised cards and overlays
  *   --accent       primary actions and highlights
  *   --accent-soft  quiet fills behind accent text (badges, dark-mode tints)
+ *   --accent-ink   accent used as text (titles, badges). Lighter in dark mode so it
+ *                  passes AA on the dark surfaces, where --accent does not.
+ *
+ * Type scale. Only display headings and score values use it, so the body text
+ * stays at the browser's and the platform's default sizes.
+ *   --font-display  Fraunces, for titles and score values
+ *   --font-body     Manrope, for everything else
+ *   --text-stat     score and stat values
+ *   --text-title    overlay titles
+ *   --text-display  the start-screen title
  */
 :root {
   /* Neutrals */
@@ -34,6 +44,14 @@
   /* Accent */
   --accent: #2563eb;
   --accent-soft: #eff6ff;
+  --accent-ink: #2563eb;
+
+  /* Type scale */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --text-stat: 1.25rem;
+  --text-title: clamp(2rem, 9vw, 2.6rem);
+  --text-display: clamp(2.25rem, 11vw, 3.25rem);
 
   /* Layout */
   --radius: 1.25rem;
@@ -55,7 +73,7 @@
   --border: #e5e7eb;
 
   /* Fonts */
-  font-family: "Manrope", system-ui, sans-serif;
+  font-family: var(--font-body);
 }
 
 /*
@@ -78,6 +96,7 @@
   --error: #ef4444;
 
   --accent-soft: #1a2e26;
+  --accent-ink: #60a5fa;
 
   /* Backward-compat aliases */
   --bg: #0f0f0f;
@@ -92,6 +111,18 @@
 
 :root[data-text="lg"] {
   font-size: 118%;
+}
+
+/*
+ * Tile tilt: a hovered tile that can be taken leans a few degrees toward the player.
+ * It needs a fine pointer, so touch screens never see it, and it does not apply
+ * under reduced motion. The angles are capped at 6deg, and a pressed tile keeps
+ * its press transform.
+ */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .tile-tilt:enabled:hover:not(:active) .tile-face {
+    transform: perspective(360px) rotateX(5deg) rotateY(-5deg);
+  }
 }
 
 /* Keyboard focus must be visible on every control */
@@ -226,7 +257,7 @@ button:enabled:active .tile-face {
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--accent);
+  color: var(--accent-ink);
   background: var(--accent-soft);
   animation: helper-badge-bump var(--motion-fast) var(--motion-ease-spring);
 }
@@ -246,8 +277,8 @@ button:enabled:active .tile-face {
   z-index: 750;
   pointer-events: none;
   white-space: nowrap;
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 1.25rem;
+  font-family: var(--font-display);
+  font-size: var(--text-stat);
   font-weight: 800;
   color: #ffd700;
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
