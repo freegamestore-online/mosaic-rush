@@ -1,7 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useGameLoop } from "../hooks/useGameLoop";
 import { createBurst, MAX_PARTICLES, particleAlpha, stepParticles, type BurstOptions, type Particle } from "./particles";
-import { prefersReducedMotion } from "./reducedMotion";
+import { prefersReducedMotion } from "../motion/reducedMotion";
 
 export interface ParticleLayerHandle {
   /** Launch a burst from (x, y), in the layer's own pixel space. Does nothing under reduced motion. */

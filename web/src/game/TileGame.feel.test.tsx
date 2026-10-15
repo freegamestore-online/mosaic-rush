@@ -62,3 +62,42 @@ describe("TileGame feel", () => {
     expect(tray().className).toContain("tray-shake");
   });
 });
+
+describe("TileGame tile flight", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setReducedMotion(false);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    Reflect.deleteProperty(window, "matchMedia");
+  });
+
+  it("flies a tapped tile into its tray slot, then lets it settle", () => {
+    render(<TileGame label="Level 1" board={[[["R"], ["O"]]]} />);
+    fireEvent.click(tapped("Tile O, column 2, row 1"));
+
+    const flying = () => document.querySelector<HTMLElement>('[data-slot="0"] > [data-kind]');
+    act(() => {
+      vi.advanceTimersByTime(16);
+    });
+    expect(flying()?.style.transform).not.toBe("");
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(flying()?.style.transform).toBe("");
+  });
+
+  it("does not fly tiles under reduced motion", () => {
+    setReducedMotion(true);
+    render(<TileGame label="Level 1" board={[[["R"], ["O"]]]} />);
+    fireEvent.click(tapped("Tile O, column 2, row 1"));
+
+    act(() => {
+      vi.advanceTimersByTime(16);
+    });
+    expect(document.querySelector<HTMLElement>('[data-slot="0"] > [data-kind]')?.style.transform).toBe("");
+  });
+});
