@@ -1,6 +1,7 @@
 import {
   canTakeTile,
   createGame,
+  isBoardCleared,
   takeTile,
   type GameState,
   type Stack,
@@ -26,7 +27,7 @@ export function isSolvable(
 
   let state = pending.pop();
   while (state) {
-    if (isCleared(state)) return true;
+    if (isBoardCleared(state)) return true;
 
     for (const [x, y] of tapTargets(state)) {
       const next = takeTile(state, x, y);
@@ -40,11 +41,6 @@ export function isSolvable(
     state = pending.pop();
   }
   return false;
-}
-
-/** Board cleared and tray emptied. A board left empty with tiles in the tray is a dead end. */
-function isCleared(state: GameState): boolean {
-  return state.tray.length === 0 && state.cells.every((row) => row.every((stack) => stack.length === 0));
 }
 
 function tapTargets(state: GameState): [number, number][] {

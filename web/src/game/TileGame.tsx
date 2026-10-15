@@ -1,4 +1,5 @@
-import { TRAY_CAPACITY, canTakeTile, type GameState, type Stack } from "./boardState";
+import { useEffect } from "react";
+import { TRAY_CAPACITY, canTakeTile, isBoardCleared, type GameState, type Stack } from "./boardState";
 import { useTileGame, type TrayTile } from "./useTileGame";
 
 const TILE_COLORS: Record<string, string> = {
@@ -27,28 +28,50 @@ function TileFace({ kind }: { kind: string }) {
   );
 }
 
-export function TileGame({ level }: { level: Stack[][] }) {
-  const { game, tray, busy, tap, restart } = useTileGame(level);
+interface TileGameProps {
+  levelNumber: number;
+  board: Stack[][];
+  /** Called once when the board is fully cleared. */
+  onWin?: () => void;
+  onNext?: () => void;
+}
+
+export function TileGame({ levelNumber, board, onWin, onNext }: TileGameProps) {
+  const { game, tray, busy, tap, restart } = useTileGame(board);
   const lost = game.status === "lost";
+  const won = isBoardCleared(game);
+
+  useEffect(() => {
+    if (won) onWin?.();
+  }, [won]);
 
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-6">
-      <Board game={game} disabled={busy || lost} onTap={tap} />
+      <Board game={game} disabled={busy || lost || won} onTap={tap} />
       <Tray tiles={tray} />
       <p className="min-h-6 text-center" style={{ color: "var(--muted)" }} aria-live="polite">
-        {lost ? "Tray full. Game over." : "Tap a top tile to move it to the tray."}
+        {won
+          ? `Level ${levelNumber} cleared!`
+          : lost
+            ? "Tray full. Game over."
+            : `Level ${levelNumber}. Tap a top tile to move it to the tray.`}
       </p>
-      {lost && (
-        <button
-          type="button"
-          onClick={restart}
-          className="rounded-xl px-5 py-2 font-semibold text-white"
-          style={{ background: "var(--accent)" }}
-        >
-          Play again
-        </button>
-      )}
+      {lost && <ActionButton label="Play again" onClick={restart} />}
+      {won && onNext && <ActionButton label="Next level" onClick={onNext} />}
     </div>
+  );
+}
+
+function ActionButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-xl px-5 py-2 font-semibold text-white"
+      style={{ background: "var(--accent)" }}
+    >
+      {label}
+    </button>
   );
 }
 

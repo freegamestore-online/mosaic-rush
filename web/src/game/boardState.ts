@@ -25,6 +25,11 @@ export function getStack(state: GameState, x: number, y: number): Stack | undefi
   return state.cells[y]?.[x];
 }
 
+/** Every tile is off the board and the tray is empty. */
+export function isBoardCleared(state: GameState): boolean {
+  return state.tray.length === 0 && state.cells.every((row) => row.every((stack) => stack.length === 0));
+}
+
 /** Whether a tap on column `x`, row `y` would take a tile. */
 export function canTakeTile(state: GameState, x: number, y: number): boolean {
   return state.status === "playing" && (getStack(state, x, y)?.length ?? 0) > 0;
