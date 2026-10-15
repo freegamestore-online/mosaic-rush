@@ -101,6 +101,7 @@ body {
 
 /* Tile face: a raised, rounded surface that sinks while its tile button is held */
 .tile-face {
+  border-radius: 0.75rem;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.35),
     inset 0 -3px 0 rgb(0 0 0 / 0.2),
@@ -115,6 +116,28 @@ button:enabled:active .tile-face {
   box-shadow:
     inset 0 2px 4px rgb(0 0 0 / 0.35),
     0 1px 2px rgb(0 0 0 / 0.2);
+}
+
+/* Start-screen artwork: a 3×3 mosaic of the nine tile faces */
+.mosaic {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 28px -16px rgb(0 0 0 / 0.35);
+}
+
+.mosaic-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 /* Tile motion: a tapped tile pops into the tray; a matched trio shrinks away */

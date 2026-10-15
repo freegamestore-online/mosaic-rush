@@ -1,23 +1,31 @@
 import { useMemo, useState } from "react";
-import { GameShell, GameTopbar, GameAuth, GameTextSizeToggle, GameThemeToggle } from "@freegamestore/games";
+import { GameShell, GameTopbar, GameAuth, GameButton, GameTextSizeToggle, GameThemeToggle } from "@freegamestore/games";
 import { TileGame } from "./game/TileGame";
 import { levelBoard } from "./game/difficulty";
 import { DailyGame } from "./game/DailyGame";
 import { useProgress } from "./game/useProgress";
 import { usePrefs } from "./game/usePrefs";
 import type { Prefs } from "./game/prefs";
+import { HOW_TO_PLAY } from "./game/howToPlay";
+import { MosaicBackdrop } from "./game/MosaicBackdrop";
+import { HowToPlayList } from "./ui/HowToPlay";
+import { StartScreen } from "./ui/StartScreen";
 
 type Mode = "levels" | "daily";
+type Screen = "start" | "play";
 
 export default function App() {
+  const [screen, setScreen] = useState<Screen>("start");
   const [mode, setMode] = useState<Mode>("levels");
   const { prefs, setPref } = usePrefs();
+  const playing = screen === "play";
 
   return (
     <GameShell
       topbar={
         <GameTopbar
           title="Mosaic Rush"
+          rules={playing ? <HowToPlayList steps={HOW_TO_PLAY} /> : undefined}
           about={
             <p>
               More free games at{" "}
@@ -37,13 +45,26 @@ export default function App() {
         />
       }
     >
-      <div className="flex h-full flex-col items-center justify-center gap-3 p-3">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <ModeSwitch mode={mode} onChange={setMode} />
-          <PrefToggles prefs={prefs} onChange={setPref} />
+      {playing ? (
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-3">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <GameButton variant="ghost" size="sm" onClick={() => setScreen("start")}>
+              Menu
+            </GameButton>
+            <ModeSwitch mode={mode} onChange={setMode} />
+            <PrefToggles prefs={prefs} onChange={setPref} />
+          </div>
+          {mode === "levels" ? <LevelsGame prefs={prefs} /> : <DailyGame prefs={prefs} />}
         </div>
-        {mode === "levels" ? <LevelsGame prefs={prefs} /> : <DailyGame prefs={prefs} />}
-      </div>
+      ) : (
+        <StartScreen
+          title="Mosaic Rush"
+          tagline="Tap tiles into your tray and match three of a kind."
+          backdrop={<MosaicBackdrop />}
+          howToPlay={HOW_TO_PLAY}
+          onPlay={() => setScreen("play")}
+        />
+      )}
     </GameShell>
   );
 }
